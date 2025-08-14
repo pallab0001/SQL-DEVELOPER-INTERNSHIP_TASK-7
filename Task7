@@ -1,0 +1,60 @@
+-- 1.Use CREATE VIEW with complex SELECT
+--Show each customer with total number of orders they placed.
+CREATE VIEW [CustomerOrderSummary] AS
+SELECT c.CustomerID, c.CompanyName, COUNT(o.OrderID) AS TotalOrders
+FROM Customers c
+LEFT JOIN Orders o ON c.CustomerID = o.CustomerID
+GROUP BY c.CustomerID, c.CompanyName;
+
+SELECT * FROM CustomerOrderSummary WHERE TotalOrders > 20;
+
+--Show orders where the total order value is above $5000.
+CREATE VIEW HighValueOrders AS
+SELECT o.OrderID, c.CompanyName, SUM(od.UnitPrice * od.Quantity) AS TotalValue
+FROM Orders o
+JOIN Customers c ON o.CustomerID = c.CustomerID
+JOIN [Order Details] od ON o.OrderID = od.OrderID
+GROUP BY o.OrderID
+HAVING TotalValue > 5000;
+
+SELECT * FROM HighValueOrders ORDER BY TotalValue DESC;
+
+--Top 5 products based on quantity sold.
+CREATE VIEW TopSellingProducts AS
+SELECT p.ProductName, SUM(od.Quantity) AS TotalSold
+FROM [Order Details] od
+JOIN Products p ON od.ProductID = p.ProductID
+GROUP BY p.ProductName
+ORDER BY TotalSold DESC
+LIMIT 5;
+SELECT * FROM TopSellingProducts;
+
+-- 2.Use views for abstraction and security
+/*
+  1. Abstraction
+Example:
+Suppose you need Customer Name, Order Count, and Total Amount Spent often.
+Instead of joining Customers, Orders, and OrderDetails every time, I need to create:
+*/
+CREATE VIEW CustomerSummary AS
+SELECT c.CustomerID, c.CompanyName,
+       COUNT(o.OrderID) AS OrderCount,
+       SUM(od.UnitPrice * od.Quantity) AS TotalSpent
+FROM Customers c
+JOIN Orders o ON c.CustomerID = o.CustomerID
+JOIN [Order Details] od ON o.OrderID = od.OrderID
+GROUP BY c.CustomerID;
+
+SELECT * FROM CustomerSummary WHERE TotalSpent > 10000;
+
+/*
+  2. Security
+Views can restrict access to certain columns or rows, so users see only what they are allowed to.
+For example, 
+I may want users to see customer names and order totals, but not their addresses or phone numbers.
+*/
+CREATE VIEW PublicCustomerInfo AS
+SELECT CustomerID, CompanyName, Country
+FROM Customers;
+
+SELECT * FROM PublicCustomerInfo;
